@@ -1,0 +1,78 @@
+version:  '3.3'
+services:
+    rabbitmq:
+        image: rabbitmq:3-management
+        container_name: rabbitmq
+        restart: always
+        hostname: rabbitmq
+        ports:
+            - 15672:15672
+        environment:
+            RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+            RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PWD}
+            RABBITMQ_DEFAULT_VHOST: "/"
+    service:
+        depends_on:
+            - rabbitmq
+        build: .
+        container_name: service
+        restart: always
+        volumes:
+            #use normal volumes later
+            - type: bind
+              source: /Users/marcelo/Desktop/source-images
+              target: /source-images
+        ports:
+            - 8080:8080
+        environment:
+            RABBITMQ_USER: ${RABBITMQ_USER}
+            RABBITMQ_PWD: ${RABBITMQ_PWD}
+            RABBITMQ_HOST: ${RABBITMQ_HOST}
+            RABBITMQ_PORT: ${RABBITMQ_PORT}
+            RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+            MYSQL_METADATA_TABLE: ${MYSQL_METADATA_TABLE}
+            AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+            AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+            AWS_REGION: ${AWS_REGION}
+            AWS_BUCKET: ${AWS_BUCKET}
+    worker:
+        depends_on:
+            - rabbitmq
+        build: worker/
+        container_name: worker
+        restart: always
+        environment:
+            RABBITMQ_USER: ${RABBITMQ_USER}
+            RABBITMQ_PWD: ${RABBITMQ_PWD}
+            RABBITMQ_HOST: ${RABBITMQ_HOST}
+            RABBITMQ_PORT: ${RABBITMQ_PORT}
+            RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
+            AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+            AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+            AWS_BUCKET: ${AWS_BUCKET}
+        volumes:
+            #use normal volumes later
+            - type: bind
+              source: /Users/marcelo/Desktop/source-images
+              target: /source-images
+            - type: bind
+              source: /Users/marcelo/Desktop/blurred-images
+              target: /blurred-images
+    mysql:
+        depends_on:
+            - rabbitmq
+        image: mysql:8.0
+        container_name: mysql
+        restart: always
+        environment:
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+        volumes:
+            - type: bind
+              source: /Users/marcelo/Desktop/blur-mysql
+              target: /var/lib/mysql
